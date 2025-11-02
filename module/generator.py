@@ -55,9 +55,6 @@ class WrappedPhaseNet(BaseGenerator, sbm.PhaseNet):
 
 class GBuilder:
     def __init__(self):
-        self.model_name_dict = {
-            "PN": "WrappedPhaseNet",
-        }
         self.model_dict = {
             "WrappedPhaseNet": {
                 "model": WrappedPhaseNet,
@@ -70,7 +67,7 @@ class GBuilder:
         }
 
     def build(self, g_model_name, label, learning_rate):
-        g_model_name = self.model_name_dict[g_model_name]
+        g_model_name = "WrappedPhaseNet"
         g_model = self.model_dict[g_model_name]["model"]
         g_model = g_model(**self.model_dict[g_model_name]["model_params"])
         g_model.phase_order = "PS" + label

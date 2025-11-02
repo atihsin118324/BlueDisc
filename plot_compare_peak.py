@@ -10,11 +10,8 @@ import mlflow
 
 def get_mlflow_client():
     """Get MLflow client"""
-    with open("/workspace/hosts.json", "r") as f:
-        hosts = json.load(f)
-
-    mlflow_host = hosts.get("mlflow_host", "0.0.0.0")
-    mlflow_port = hosts.get("mlflow_port", 5000)
+    mlflow_host = '0.0.0.0'
+    mlflow_port = 5000
     return mlflow.MlflowClient(f"http://{mlflow_host}:{mlflow_port}")
 
 

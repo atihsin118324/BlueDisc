@@ -17,6 +17,7 @@ from module.device_manager import DeviceManager
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", type=str, required=True)
+    parser.add_argument("--dataset", type=str, required=True, help="Dataset name available in seisbench dataset class name (e.g., ETHZ, InstanceCount)")
     parser.add_argument("--step", type=int)
     parser.add_argument("--epoch", type=int)
     parser.add_argument("--device", type=str, default="auto")
@@ -66,7 +67,8 @@ if __name__ == "__main__":
         gan_model.d_model = device_manager.move_to_device(gan_model.d_model)
 
     # Load dataset
-    data = sbd.InstanceCounts(sampling_rate=100)
+    data_class = getattr(sbd, args.dataset)
+    data = data_class(sampling_rate=100)
     train, dev, test = data.train_dev_test()
 
     aug_builder = AugmentationsBuilder(dataset=data)
@@ -109,16 +111,16 @@ if __name__ == "__main__":
                 )
 
                 batch = {
-                    k: v.to(g_model.device).to(torch.float32) for k, v in batch.items()
+                    k: v.to(torch.float32).to(g_model.device) for k, v in batch.items()
                 }
                 y_sample = g_model.reorder_label_phase(batch).to(g_model.device)
 
                 g_pred = g_model(batch["X"], logits=g_model.logits)
                 g_pred = torch.sigmoid(g_pred).to(g_model.device)
 
-                g_pred = g_pred.detach().cpu().numpy()
-                y_sample = y_sample.detach().cpu().numpy()
-                batch["X"] = batch["X"].detach().cpu().numpy()
+                g_pred = g_pred.detach().float().cpu().numpy()
+                y_sample = y_sample.detach().float().cpu().numpy()
+                batch["X"] = batch["X"].detach().float().cpu().numpy()
 
                 logger.log_hdf5(
                     batch["X"],
