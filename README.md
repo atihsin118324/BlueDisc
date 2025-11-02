@@ -34,16 +34,16 @@ Train
 - BCE only (no GAN):
 ```bash
 python 01_training.py \
-  --label D \
-  --dataset Instance \
+  --label N \
+  --dataset InstanceCount \
   --batch-size 100 \
   --max-steps 10000
 ```
 - Shape-then-align (cGAN): set a data loss weight (λ), e.g. 4000 per paper
 ```bash
 python 01_training.py \
-  --label D \
-  --dataset Instance \
+  --label N \
+  --dataset InstanceCount \
   --data-weight 4000 \
   --g-lr 1e-3 --d-lr 1e-3 \
   --batch-size 100 \
@@ -51,7 +51,7 @@ python 01_training.py \
 ```
 Notes
 - `--dataset` is a SeisBench dataset class name (e.g., `Instance`, `ETHZ`). The dataset will be downloaded by SeisBench on first use.
-- `--label` controls the output channel order: `D` (detection) or `N` (noise) after `PS`.
+- `--label` controls the output channel order: `D` (detection) or `N` (noise).
 
 Infer
 1) Find the `run_id` from MLflow UI or `mlruns/*/*/meta.yaml`.
@@ -59,15 +59,13 @@ Infer
 ```bash
 python 02_inference.py \
   --run-id <RUN_ID> \
-  --dataset Instance \
-  --data-split dev
+  --dataset InstanceCount 
 ```
 
 Evaluate
 ```bash
 python 03_evaluation.py \
-  --run-id <RUN_ID> \
-  --data-split dev
+  --run-id <RUN_ID> 
 ```
 Outputs are saved under `mlruns/<experiment>/<run_id>/artifacts/` (waveforms, labels, predictions as HDF5; checkpoints under `checkpoint/`; matching CSVs under `<split>/matching_results/`).
 

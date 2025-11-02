@@ -14,17 +14,17 @@ mlflow server --host 127.0.0.1 --port 5000 \
 ```
 2) Train (hybrid, λ=4000, 10k steps)
 ```bash
-python 01_training.py --label D --dataset Instance \
+python 01_training.py --label N --dataset InstanceCount \
   --data-weight 4000 --batch-size 100 --max-steps 10000
 ```
 3) Get the `run_id` from MLflow UI or `mlruns/*/*/meta.yaml`
 4) Inference (dev split)
 ```bash
-python 02_inference.py --run-id <RUN_ID> --dataset Instance --data-split dev
+python 02_inference.py --run-id <RUN_ID> --dataset InstanceCount
 ```
 5) Evaluate (dev split)
 ```bash
-python 03_evaluation.py --run-id <RUN_ID> --data-split dev
+python 03_evaluation.py --run-id <RUN_ID>
 ```
 Check outputs under `mlruns/<exp>/<run>/artifacts/dev/` and matching CSVs in `matching_results/`.
 
@@ -42,7 +42,7 @@ Inference and evaluation
 ## CLI options (key)
 - `01_training.py`
   - `--label {D,N}`: choose detection or noise as the third output channel (after `PS`)
-  - `--dataset <SeisBenchClass>`: e.g., `Instance`, `ETHZ`; auto-downloaded by SeisBench
+  - `--dataset <SeisBenchClass>`: e.g., `InstanceCount`, `ETHZ`; auto-downloaded by SeisBench
   - `--data-weight <float>`: λ for BCE in the hybrid loss (enables GAN when provided)
   - `--g-lr`, `--d-lr`: learning rates (default 1e-3)
   - `--batch-size` (default 100), `--max-steps` (default 10000), `--device` (`auto`)
@@ -65,7 +65,7 @@ Inference and evaluation
 
 ## Troubleshooting
 - “CUDA not available”: use `--device cpu` or install CUDA-enabled PyTorch.
-- “Dataset class not found”: ensure the name matches SeisBench (e.g., `Instance`, `ETHZ`).
+- “Dataset class not found”: ensure the name matches SeisBench (e.g., `InstanceCount`, `ETHZ`).
 - MLflow connection errors: make sure the server runs on the host/port used in scripts (127.0.0.1 or 0.0.0.0 on port 5000). Use `--backend-store-uri ./mlruns --default-artifact-root ./mlruns` so artifacts land under this repo.
 
 For deeper background, results, and design rationale, please refer to the accompanying paper.
