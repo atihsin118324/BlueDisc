@@ -37,7 +37,7 @@ python 01_training.py \
   --dataset InstanceCounts \
   --max-steps 10000
 ```
-- Shape-then-align (cGAN): set a data loss weight (λ), e.g. 4000 per paper
+- Conditional GAN: set a data loss weight (λ), e.g. 4000 per paper
 ```bash
 python 01_training.py \
   --label N \
@@ -65,9 +65,28 @@ python 03_evaluation.py \
 ```
 Outputs are saved under `mlruns/<experiment>/<run_id>/artifacts/` (waveforms, labels, predictions as HDF5; checkpoints under `checkpoint/`; matching CSVs under `<split>/matching_results/`).
 
+## Visualization
+
+The repository includes several plotting scripts to analyze model behavior during and after training:
+
+### Training-based visualization (using logged tracking data)
+During training, the model automatically logs sample predictions at each step. You can visualize training progression using:
+- `plot_compare_time.py`: visualize how predictions evolve over training steps for a specific sample
+- `plot_compare_shape.py`: compare prediction shapes at selected training steps
+- `plot_compare_runs.py`: side-by-side comparison of predictions from different runs at the same step
+
+These scripts work directly with the tracking data logged during training (`mlruns/<experiment>/<run_id>/artifacts/track/`).
+
+### Inference-based visualization (requires test dataset predictions)
+- `plot_compare_peak.py`: analyze peak detection accuracy by comparing predicted peaks with ground-truth labels. **Requires running both inference (`02_inference.py`) and evaluation (`03_evaluation.py`)** on the test dataset first. The evaluation step generates matching results (`matching_results/` CSVs) that pair each predicted peak with its corresponding label peak, enabling quantitative analysis of detection performance.
+
+### Data exploration
+- `plot_compare_phase.py`: visualize P and S phase label arrangements in the dataset. This is a data exploration tool independent of model training.
+
 ## Repo layout
-- `01_training.py`, `02_inference.py`, `03_evaluation.py`: train → infer → evaluate
+- `01_training.py`, `02_inference.py`, `03_evaluation.py`: train → infer → evaluate pipeline
 - `module/`: generator (PhaseNet wrapper), discriminator (BlueDisc), GAN training loop, data pipeline, logger
+- `plot_*.py`: visualization scripts for analyzing training, inference, and data
 - `mlruns/`: MLflow experiments and artifacts
 - `docs/`: short documentation
 - `loss_landscape/`: standalone loss-landscape simulations (BCE toy experiments)
