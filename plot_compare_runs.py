@@ -253,10 +253,9 @@ def plot_sample(
         pad_inches=0.1,
     )
     plt.close()
-    if data_split == "track":
-        print(f"Sample {sample_id:0>3} Step {step:0>7} comparison is plotted.")
-    else:
-        print(f"Sample {sample_id:0>3} Batch {batch:0>7} comparison is plotted.")
+
+    print(f" artifacts/{data_split}/{output_folder}/compare_sample_{sample_id:0>3}_step_{step:0>7}.png is plotted.")
+
     sys.stdout.flush()
 
 

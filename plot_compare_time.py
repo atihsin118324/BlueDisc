@@ -175,14 +175,14 @@ def plot_waveform(sample_id):
         dpi=300,  # Higher DPI for better quality
     )
     plt.close()
-    print(f"Saved {experiment_name}_sample_{sample_id:0>3}.png")
+    print(f"Saved artifacts/sample_history/{experiment_name}_sample_{sample_id:0>3}.png")
     sys.stdout.flush()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", type=str)
-    parser.add_argument("--max-steps", type=int, default=10000)
+    parser.add_argument("--max-steps", type=int, default=None)
     parser.add_argument("--sample-ids", type=str)
 
     args = parser.parse_args()
@@ -203,12 +203,38 @@ if __name__ == "__main__":
     time_threshold = 0.1  # in seconds
     confidence = 0.7
 
-    max_step = args.max_steps
-    sample_size = 100
-    sample_ids = range(sample_size)
+    # Auto-detect max_steps from prediction files if not specified
+    if args.max_steps is None:
+        import glob
+        prediction_path = os.path.join(base_path, "track", "prediction")
+        if os.path.exists(prediction_path):
+            prediction_files = glob.glob(os.path.join(prediction_path, "prediction_*.h5"))
+            if prediction_files:
+                max_step = len(prediction_files)
+                print(f"Auto-detected {max_step} prediction files")
+            else:
+                max_step = 10000
+                print(f"No prediction files found. Using default max_step={max_step}")
+        else:
+            max_step = 10000
+            print(f"Prediction path not found. Using default max_step={max_step}")
+    else:
+        max_step = args.max_steps
 
+    # Auto-detect sample_size from trace_name file if sample_ids not specified
     if args.sample_ids:
         sample_ids = [int(sample_id) for sample_id in args.sample_ids.split(",")]
+    else:
+        trace_name_file = os.path.join(base_path, "track", "trace_name", "trace_name_0000000.txt")
+        if os.path.exists(trace_name_file):
+            with open(trace_name_file, 'r') as f:
+                lines = [line.strip() for line in f if line.strip()]
+            sample_size = len(lines)
+            print(f"Auto-detected {sample_size} samples from trace_name file")
+        else:
+            sample_size = 100
+            print(f"Trace name file not found. Using default sample_size={sample_size}")
+        sample_ids = range(sample_size)
 
     for ids in sample_ids:
         plot_waveform(ids)

@@ -286,7 +286,7 @@ def plot_sample_for_steps(sample_id):
     )
     plt.close()
 
-    print(f"Sample {sample_id:0>3} with steps {args.steps} plotted.")
+    print(f"artifaces/{data_split}/sample_plot/sample_{sample_id:0>3}.png with steps {args.steps} plotted.")
     sys.stdout.flush()
 
 
@@ -320,12 +320,27 @@ if __name__ == "__main__":
     mlflow_port = 5000
     client = mlflow.MlflowClient(f"http://{mlflow_host}:{mlflow_port}")
 
-    if args.data_split == "track":
-        max_sample = 100
-    else:
-        max_sample = 1000
+    # Get run info to locate trace_name file
+    current_run = client.get_run(args.run_id)
+    experiment_id = current_run.info.experiment_id
 
+    # Auto-detect max_sample from trace_name file if sample_ids not specified
     if args.sample_ids is None or len(args.sample_ids) == 0:
+        trace_name_file = f"mlruns/{experiment_id}/{args.run_id}/artifacts/{args.data_split}/trace_name/trace_name_0000000.txt"
+
+        if os.path.exists(trace_name_file):
+            with open(trace_name_file, 'r') as f:
+                lines = [line.strip() for line in f if line.strip()]
+            max_sample = len(lines)
+            print(f"Auto-detected {max_sample} samples from trace_name file")
+        else:
+            # Fallback to default values
+            if args.data_split == "track":
+                max_sample = 100
+            else:
+                max_sample = 1000
+            print(f"Trace name file not found. Using default max_sample={max_sample}")
+
         args.sample_ids = range(0, max_sample)
 
     for ids in args.sample_ids:

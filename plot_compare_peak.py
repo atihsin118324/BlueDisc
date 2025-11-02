@@ -481,7 +481,7 @@ def plot_combined_jointplot(
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"Combined joint plot (3 runs) saved: {save_path}")
+    print(f"saved: {save_path}")
 
 
 def plot_peak_jointplot(
