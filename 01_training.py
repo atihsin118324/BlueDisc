@@ -20,20 +20,15 @@ web_port = 8080
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--label", type=str, required=True, choices=["D", "N"])
-    parser.add_argument("--g-model", type=str, required=True)
-    parser.add_argument("--d-model", type=str)
-    parser.add_argument("--gan-type", type=str)
-    parser.add_argument("--dataset", type=str, required=True)
-    parser.add_argument("--device", type=str, default="auto")
-    parser.add_argument("--g-lr", type=float)
-    parser.add_argument("--d-lr", type=float)
-    parser.add_argument("--data-weight", type=float, default=1.0)
-    parser.add_argument("--gan-weight", type=float, default=1.0)
-    parser.add_argument("--sample-size", type=int, default=10)
-    parser.add_argument("--batch-size", type=int, default=100)
-    parser.add_argument("--max-steps", type=int, default=10000)
-    parser.add_argument("--plot-sample", type=int)
+    parser.add_argument("--label", type=str, required=True, choices=["D", "N"], help="Label type to train the generator on (D for detection, N for noise)")
+    parser.add_argument("--dataset", type=str, required=True, help="Dataset name available in seisbench dataset class name (e.g., ETHZ, InstanceCount)")
+    parser.add_argument("--g-lr", type=float, help="Generator learning rate")
+    parser.add_argument("--d-lr", type=float, help="Discriminator learning rate")
+    parser.add_argument("--data-weight", type=float, help="Data loss weight. If specified, GAN will be used.")
+    parser.add_argument("--sample-size", type=int, default=1, help="Number of samples to use from dev set for evaluation during training")
+    parser.add_argument("--batch-size", type=int, default=100, help="Batch size for training")
+    parser.add_argument("--max-steps", type=int, default=10000, help="Maximum training steps")
+    parser.add_argument("--device", type=str, default="auto", help="Device to use for training (e.g., 'cpu', 'cuda', 'auto')")
 
     args = parser.parse_args()
 
@@ -48,23 +43,32 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     max_steps = args.max_steps
 
-    gan_loss_weight = args.gan_weight
-    if not args.gan_type:
-        gan_loss_weight = 0
-        args.data_weight = 1  # If no GAN is specified, force data_weight to 1
+    # Determine if GAN is used based on whether data_weight is specified
+    use_gan = args.data_weight is not None
 
-    # Build generator and discriminator models
+    if not use_gan:
+        # No GAN, only data loss
+        gan_loss_weight = 0
+        data_weight = 1.0
+        gan_type = None
+    else:
+        # Use GAN with specified data_weight
+        gan_loss_weight = 1.0
+        data_weight = args.data_weight
+        gan_type = "SGAN"
+
+    # Build generator model (only PN/PhaseNet)
     g_builder = GBuilder()
-    g_model = g_builder.build(args.g_model, args.label, args.g_lr)
+    g_model = g_builder.build("PN", args.label, args.g_lr)
 
     # Move generator to device
     g_model = device_manager.move_to_device(g_model)
 
+    # Build discriminator model if using GAN (only BlueDisc)
     d_model = None
-
-    if args.d_model:
+    if use_gan:
         d_builder = DBuilder()
-        d_model = d_builder.build(args.d_model, args.d_lr)
+        d_model = d_builder.build("BlueDisc", args.d_lr)
 
         # Move discriminator to device
         d_model = device_manager.move_to_device(d_model)
@@ -78,16 +82,14 @@ if __name__ == "__main__":
     mlflow.set_tracking_uri(f"http://{mlflow_host}:{mlflow_port}")
 
     # Set experiment name
-    experient_name = f"{args.g_model}_{args.label}"
+    experient_name = f"PN_{args.label}"
 
-    if d_model:
-        experient_name += f"_{d_model.name}"
-    if args.gan_type:
-        experient_name += f"_{args.gan_type}"
-    if args.data_weight == 0 and args.gan_type:
-        experient_name += "_Data0"
-    elif args.gan_type:
-        experient_name += f"_Data{args.data_weight}"
+    if use_gan:
+        experient_name += f"_GAN"
+        if data_weight == 0:
+            experient_name += "_Data0"
+        else:
+            experient_name += f"_Data{data_weight}"
 
     mlflow.set_experiment(experient_name)
     print(f"Experient: {experient_name}")
@@ -158,10 +160,10 @@ if __name__ == "__main__":
 
         # Initialize GANModel with logger
         gan_model = GANModel(
-            gan_type=args.gan_type,
+            gan_type=gan_type,
             generator=g_model,
             discriminator=d_model,
-            g_data_weight=args.data_weight,
+            g_data_weight=data_weight,
             gan_loss_weight=gan_loss_weight,
             logger=logger,
         )
@@ -171,15 +173,15 @@ if __name__ == "__main__":
 
 
         # Log parameters
-        logger.log_param("gan_type", args.gan_type)
-        logger.log_param("g_model", g_model.name)
-        logger.log_param("d_model", None if not d_model else d_model.name)
+        logger.log_param("gan_type", gan_type)
+        logger.log_param("g_model", "PN")
+        logger.log_param("d_model", "BlueDisc" if d_model else None)
         logger.log_param("dataset", args.dataset)
         logger.log_param("sample_size", sample_size)
         logger.log_param("batch_size", batch_size)
         logger.log_param("g_lr", g_model.lr)
-        logger.log_param("d_lr", None if not d_model else d_model.lr)
-        logger.log_param("g_data_weight", args.data_weight)
+        logger.log_param("d_lr", d_model.lr if d_model else None)
+        logger.log_param("g_data_weight", data_weight)
         logger.log_param("gan_loss_weight", gan_loss_weight)
         logger.log_param("max_steps", max_steps)
 
