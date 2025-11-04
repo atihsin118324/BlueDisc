@@ -111,13 +111,15 @@ These scripts work directly with the tracking data logged during training (`mlru
 
 Please cite the paper when using this code:
 
+> **Note**: This paper is currently under submission. The citation information will be updated once the manuscript receives its arXiv or journal identifier.
+
 ```bibtex
 @article{huang2025bluedisc,
   title={Diagnosing and Breaking Amplitude Suppression in Seismic Phase Picking Through Adversarial Shape Learning},
   author={Chun-Ming Huang and Li-Heng Chang and I-Hsin Chang and An-Sheng Lee and Hao Kuo-Chen},
-  journal={arXiv preprint arXiv:XXXX.XXXXX},
+  journal={Manuscript under submission},
   year={2025},
-  url={https://arxiv.org/abs/XXXX.XXXXX}
+  note={Manuscript under submission}
 }
 ```
 
